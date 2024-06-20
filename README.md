@@ -27,8 +27,8 @@ ConsoleLine class that can provide special functionality. Refer to the example f
 
 You can add input listeners (input being strings typed in by the user) to the console. A console input listener is simply a ```Consumer<String>```
 so they can be nicely passed in as lambda expressions. There are two ways to register an input listener:
-# a permanent listener will always be called on any input
-# singular listeners will be applied to the next input and then cleared
+* a permanent listener will always be called on any input
+* singular listeners will be applied to the next input and then cleared
 Use the methods ```addInputListener(...) ``` and  ```addSingleTimeListener(...) ``` respectively.
 
 You may also set the default text color using  ```setDefaultTextColor(...) ```.
