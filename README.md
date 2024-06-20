@@ -4,7 +4,7 @@ This is a console-like interface implemented in swing. Java so far is lacking so
 run the program from the command line and use the OS's terminal. However, this is far from a stand alone terminal window to handle very simple
 user IO that does not require a fancy GUI.
 Features include...
-* undecorated window that can be dragged around
+* undecorated window that can be dragged around and be scrolled up and down
 * writing to the console and binding functionality such as click events and tooltips to messages
 * set a default text color as well as color code individual messages
 * get user input from the console
