@@ -43,6 +43,8 @@ public class JConsole extends JFrame {
     private int cachedFontHeight = -1;
     private int currentlyHoveredIndex = -1;
     private boolean printInput = true;
+    private boolean awaitingInput = false;
+    private String inputCache = null;
 
     /**
      * Creates a new console object with width and height passed as parameters
@@ -153,6 +155,8 @@ public class JConsole extends JFrame {
                 permanentListeners.forEach(c -> c.accept(input));
                 singleListeners.forEach(c -> c.accept(input));
                 singleListeners.clear();
+                if (awaitingInput)
+                    inputCache = input;
             } else if (id == 8) {
                 pendingInput.delete();
             } else {
@@ -250,6 +254,24 @@ public class JConsole extends JFrame {
      */
     public void setPrintInput(boolean flag) {
         printInput = flag;
+    }
+
+    /**
+     * Returns the next user input made and blocks the calling thread until the user enters something
+     */
+    public String awaitInput() {
+        awaitingInput = true;
+        while(inputCache == null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        String temp = inputCache;
+        inputCache = null;
+        awaitingInput = false;
+        return temp;
     }
 
 }
