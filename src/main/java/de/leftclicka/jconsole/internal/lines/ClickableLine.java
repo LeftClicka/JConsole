@@ -1,5 +1,7 @@
 package de.leftclicka.jconsole.internal.lines;
 
+import java.awt.*;
+
 public class ClickableLine extends TooltippedLine {
     private static final Runnable empty = ()->{};
     private final Runnable onClick;
@@ -23,6 +25,14 @@ public class ClickableLine extends TooltippedLine {
         this(text, text, singleUse, onClick);
     }
 
+    @Override
+    public String getHoveredText() {
+        if (isSingleUse && isUsed)
+            return getDefaultText();
+        return super.getHoveredText();
+    }
+
+
     public Runnable getTask() {
         if (isSingleUse && isUsed)
             return empty;
@@ -33,4 +43,5 @@ public class ClickableLine extends TooltippedLine {
         if (isSingleUse)
             isUsed = flag;
     }
+
 }

@@ -11,6 +11,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,6 +23,13 @@ import java.util.function.Consumer;
 import static java.awt.event.KeyEvent.CHAR_UNDEFINED;
 
 public class JConsole extends JFrame {
+
+    private static final BufferedImage BLACK;
+
+    static {
+        BLACK = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        BLACK.setRGB(0, 0, Color.BLACK.getRGB());
+    }
 
     private final LinkedList<ConsoleLine> lines = new LinkedList<>();
     private final Map<Class<? extends ConsoleLine>, ConsoleLineRenderer> specialLineHandlers = new HashMap<>();
@@ -65,6 +73,7 @@ public class JConsole extends JFrame {
 
         //setup some other stuff
         panel.setSize(width, height);
+        setIconImage(BLACK);
         add(panel);
         setLocationRelativeTo(null);
         setSize(width, height);
@@ -100,7 +109,7 @@ public class JConsole extends JFrame {
                 ConsoleLine line = lines.get(index);
                 int textWidth = 5 + cachedFontMetrics.stringWidth(line.getDefaultText());
                 if (location.x <= topLeft.x + textWidth)
-                    currentlyHoveredIndex = index;
+                    currentlyHoveredIndex = index + scrolledLines;
                 else currentlyHoveredIndex = -1;
             }
         });
@@ -139,7 +148,8 @@ public class JConsole extends JFrame {
         Keyboard.addListener((int id, char character) -> {
             if (id == KeyEvent.VK_ENTER) {
                 String input = pendingInput.confirm();
-                write(new DefaultLine(input));
+                if (printInput)
+                    write(new DefaultLine(input));
                 permanentListeners.forEach(c -> c.accept(input));
                 singleListeners.forEach(c -> c.accept(input));
                 singleListeners.clear();
