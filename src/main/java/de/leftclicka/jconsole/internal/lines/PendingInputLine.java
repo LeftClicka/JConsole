@@ -27,6 +27,10 @@ public class PendingInputLine extends ConsoleLine implements Closeable {
         stringBuilder.append(c);
     }
 
+    public void addString(String str) {
+        stringBuilder.append(str);
+    }
+
     public void delete() {
         if (stringBuilder.length() > 0)
             stringBuilder.deleteCharAt(stringBuilder.length()-1);

@@ -7,6 +7,8 @@ import de.leftclicka.jconsole.internal.lines.*;
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -44,7 +46,8 @@ public class JConsole extends JFrame {
     private int currentlyHoveredIndex = -1;
     private boolean printInput = true;
     private boolean awaitingInput = false;
-    private String inputCache = null;
+    private String cachedInput;
+    private String userInputPrefix = "";
 
     /**
      * Creates a new console object with width and height passed as parameters
@@ -121,7 +124,8 @@ public class JConsole extends JFrame {
                 if (currentlyHoveredIndex < 0 || currentlyHoveredIndex >=lines.size())
                     return;
                 ConsoleLine hoveredLine = lines.get(currentlyHoveredIndex);
-                if (hoveredLine instanceof ClickableLine clickableLine) {
+                if (hoveredLine instanceof ClickableLine) {
+                    ClickableLine clickableLine = (ClickableLine)hoveredLine;
                     clickableLine.getTask().run();
                     clickableLine.setUsed(true);
                 }
@@ -148,15 +152,26 @@ public class JConsole extends JFrame {
             scrolledLines = newScrollAmount;
         });
         Keyboard.addListener((int id, char character) -> {
-            if (id == KeyEvent.VK_ENTER) {
+            if (id == KeyEvent.VK_V && Keyboard.isKeyPressed(KeyEvent.VK_CONTROL)) {
+                String clipboard ;
+                try {
+                    clipboard = (String)Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+                } catch (Exception e) {
+                    write("Copy and pasting is not supported");
+                    return;
+                }
+                if (clipboard == null)
+                    return;
+                pendingInput.addString(clipboard);
+            } else if (id == KeyEvent.VK_ENTER) {
                 String input = pendingInput.confirm();
                 if (printInput)
-                    write(new DefaultLine(input));
+                    write(new DefaultLine(userInputPrefix + input));
                 permanentListeners.forEach(c -> c.accept(input));
                 singleListeners.forEach(c -> c.accept(input));
                 singleListeners.clear();
                 if (awaitingInput)
-                    inputCache = input;
+                    cachedInput = input;
             } else if (id == 8) {
                 pendingInput.delete();
             } else {
@@ -200,7 +215,8 @@ public class JConsole extends JFrame {
      */
     public void clear() {
         for (ConsoleLine line : lines) {
-            if (line instanceof Closeable closeable) {
+            if (line instanceof Closeable) {
+                Closeable closeable = (Closeable)line;
                 try {
                     closeable.close();
                 } catch (IOException e) {
@@ -242,6 +258,43 @@ public class JConsole extends JFrame {
         super.dispose();
     }
 
+    public String leftPad(String str, int width) {
+        int spaceWidth = getStringWidth(" ");
+        int widthCounter = 0;
+        StringBuilder builder = new StringBuilder();
+        while (widthCounter < width) {
+            builder.append(" ");
+            widthCounter+=spaceWidth;
+        }
+        builder.append(str);
+        return builder.toString();
+    }
+
+    public int getStringWidth(String str) {
+        if (cachedFontMetrics == null)
+            cachedFontMetrics = getGraphics().getFontMetrics();
+        return cachedFontMetrics.stringWidth(str);
+    }
+
+    /**
+     * returns the next user input
+     * blocks the calling thread until the user enters something
+     */
+    public String awaitInput() {
+        awaitingInput = true;
+        while (cachedInput == null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        awaitingInput = false;
+        String temp = cachedInput;
+        cachedInput = null;;
+        return temp;
+    }
+
     /**
      * Register your own renderer for special ConsoleLine implementations
      */
@@ -256,22 +309,8 @@ public class JConsole extends JFrame {
         printInput = flag;
     }
 
-    /**
-     * Returns the next user input made and blocks the calling thread until the user enters something
-     */
-    public String awaitInput() {
-        awaitingInput = true;
-        while(inputCache == null) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        String temp = inputCache;
-        inputCache = null;
-        awaitingInput = false;
-        return temp;
+    public void setUserInputPrefix(String prefix) {
+        userInputPrefix = prefix;
     }
 
 }
